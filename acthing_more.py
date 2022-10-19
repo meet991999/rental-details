@@ -1,6 +1,6 @@
-import time
 from bs4 import BeautifulSoup
 import requests
+import json
 import pprint
 
 headers = {
@@ -13,8 +13,36 @@ response = requests.get('https://www.zillow.com/san-francisco-ca/rentals/?search
 content = response.text
 
 soup = BeautifulSoup(content,"lxml")
-v = soup.find(name="ul", class_="photo-cards").find_all(name="li")
-# pprint.pprint(v)
-for x in v:
-    b = x.get_text()
-    print(b)
+test = soup.findAll(name="script", attrs={"type": "application/json"})
+rent_data = test[1].text
+rent_data = rent_data.replace("<!--", "").replace("-->", "")
+rent_data = json.loads(rent_data)
+# pprint.pprint(rent_data)
+house_data = (rent_data["cat1"]["searchResults"]["listResults"])
+links = []
+prices = []
+addresses = []
+for rental in range(len(house_data)):
+    if "https://www.zillow.com" in house_data[rental]['detailUrl']:
+        links.append(house_data[rental]['detailUrl'])
+    else:
+        links.append("https://www.zillow.com" + house_data[rental]['detailUrl'])
+    try:
+        prices.append(house_data[rental]['price'])
+        addresses.append(house_data[rental]['address'])
+    except KeyError:
+        prices.append(house_data[rental]['units'][0]['price'])
+        addresses.append(house_data[rental]['address'])
+true_price = []
+for price in prices:
+    p = price[:6]
+    true_price.append(p)
+
+print(links)
+print(len(links))
+
+print(true_price)
+print(len(prices))
+
+print(addresses)
+print(len(addresses))
